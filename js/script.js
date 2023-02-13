@@ -1,17 +1,18 @@
 const container = document.getElementsByClassName("container")[0];
 const cardTemplate = document.getElementsByClassName("card_template")[0];
-
-const xhr = new XMLHttpRequest();
-xhr.open("GET", "./pokemons.json");
-xhr.onload = function () {
-    const data = JSON.parse(xhr.responseText);
-    init(data);
-};
-xhr.send();
+const limit = 100;
 
 function insert(element, parant) {
     parant.appendChild(element);
 }
+const xhr = new XMLHttpRequest();
+xhr.open("GET", `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=0`);
+xhr.onload = function () {
+    const data = JSON.parse(xhr.responseText);
+    const pokemonsURL = data.results.map((x) => x.url);
+    getPockemons(pokemonsURL);
+};
+xhr.send();
 
 const pokemonColors = {
     grass: "#defce0",
@@ -22,35 +23,39 @@ const pokemonColors = {
     poison: "#A06AB4",
     electric: "#FFFD82",
     ground: "#c7a525",
-    fairy:"#EF7C8E",
-    fighting:"#B9463F",
+    fairy: "#EF7C8E",
+    fighting: "#B9463F",
     psychic: "#F8D210",
     rock: "#B9B7BD",
-    ghost: "#77679e"
+    ghost: "#77679e",
 };
 
+function getPockemons(pokemonsURL) {
+    pokemonsURL.forEach((url, index) => {
+        fetch(`${url}`)
+            .then((response) => response.json())
+            .then((data) => {
+                let imgSource = data.sprites.other.dream_world.front_default;
+                let pokemonsName = data.name;
+                let pokemonsType = data.types[0].type.name;
 
-function init(data) {
-    for (pokemons of data) {
-        let imgSource = pokemons.image;
-        let pokemonsName = pokemons.name;
-        let pokemonsType = pokemons.type;
-        
-        const cardEl = cardTemplate.content.cloneNode(true);
-
-        const card = cardEl.querySelector(".card");
-        card.style.backgroundColor = `${pokemonColors[pokemonsType]}`;
-
-        const cardImageEl = cardEl.querySelector(".card_image").firstChild;
-        cardImageEl.setAttribute("src", `${imgSource}`);
-
-        const cardTitleEl = cardEl.querySelector(".card_name");
-        cardTitleEl.textContent = pokemonsName;
-
-        const cardBioEl = cardEl.querySelector(".card_type");
-        cardBioEl.textContent = pokemonsType;
-
-        insert(cardEl, container);
-    }
+                generateCard(imgSource, pokemonsName, pokemonsType);
+            });
+    });
 }
 
+function generateCard(imgSource, pokemonsName, pokemonsType) {
+    const cardEl = cardTemplate.content.cloneNode(true);
+    const card = cardEl.querySelector(".card");
+    card.style.backgroundColor = `${pokemonColors[pokemonsType]}`;
+
+    const cardImageEl = cardEl.querySelector(".card_image").firstChild;
+    cardImageEl.setAttribute("src", `${imgSource}`);
+
+    const cardTitleEl = cardEl.querySelector(".card_name");
+    cardTitleEl.textContent = pokemonsName;
+
+    const cardBioEl = cardEl.querySelector(".card_type");
+    cardBioEl.textContent = pokemonsType;
+    insert(cardEl, container);
+}
